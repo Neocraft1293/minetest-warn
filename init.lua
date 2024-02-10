@@ -9,7 +9,7 @@ local warns = {}
 
 -- Enregistrement de la permission pour accéder aux commandes d'avertissement
 minetest.register_privilege("warn_perm", {
-    description = S("Allows access to warn commands."),
+    description = ("Allows access to warn commands."),
     give_to_singleplayer = false,  -- Permettre à un joueur unique de posséder cette permission
 }) --privs = {warn_perm=true}, -- Ajouter cette ligne dans le fichier de configuration pour donner la permission à un joueur
 
