@@ -1,36 +1,38 @@
--- Définir un espace de nom pour le module
+-- Define a namespace for the module
 warn_system = {}
 
--- Chemin vers le fichier JSON pour les avertissements
+local S = minetest.get_translator("warn")
+
+
+-- Path to the JSON file for warnings
 local warns_json_file_path = minetest.get_worldpath() .. "/warns_data.json"
 
--- Initialiser la variable des avertissements en dehors de load_warns_database
+-- Initialize the warnings variable outside load_warns_database
 local warns = {}
 
--- Enregistrement de la permission pour accéder aux commandes d'avertissement
+-- Register privilege to access warning commands
 minetest.register_privilege("warn_perm", {
-    description = ("Allows access to warn commands."),
-    give_to_singleplayer = false,  -- Permettre à un joueur unique de posséder cette permission
-}) --privs = {warn_perm=true}, -- Ajouter cette ligne dans le fichier de configuration pour donner la permission à un joueur
+    description = S("Allows access to warn commands."),
+    give_to_singleplayer = false,  -- Allow a single player to possess this permission
+})
 
-
--- Fonction pour charger la base de données des avertissements
+-- Function to load the warnings database
 function warn_system.load_warns_database()
     local json_file = io.open(warns_json_file_path, "r")
     if json_file then
         warns = minetest.deserialize(json_file:read("*all"))
         json_file:close()
-        minetest.log("action", "[warn_system] Base de données d'avertissements chargée avec succès.")
+        minetest.log("action", S("[warn_system] Warnings database loaded successfully."))
     else
-        -- Créer le fichier JSON s'il n'existe pas
+        -- Create the JSON file if it doesn't exist
         local new_json_file = io.open(warns_json_file_path, "w")
         new_json_file:write(minetest.serialize(warns))
         new_json_file:close()
-        minetest.log("action", "[warn_system] Nouvelle base de données d'avertissements créée.")
+        minetest.log("action", S("[warn_system] New warnings database created."))
     end
 end
 
--- Fonction pour sauvegarder les avertissements dans le fichier JSON
+-- Function to save warnings to JSON file
 function warn_system.save_warns()
     local json_file = io.open(warns_json_file_path, "w")
     if json_file then
@@ -39,7 +41,7 @@ function warn_system.save_warns()
     end
 end
 
--- fonction pour annuler un avertissement
+-- Function to cancel a warning
 function warn_system.cancel_warn(player_name, warn_num)
     if not warns[player_name] or not warns[player_name]["warn"..warn_num] then
         return
@@ -48,7 +50,7 @@ function warn_system.cancel_warn(player_name, warn_num)
     warn_system.save_warns()
 end
 
--- fonction pour réactiver un avertissement
+-- Function to reactivate a warning
 function warn_system.reactivate_warn(player_name, warn_num)
     if not warns[player_name] or not warns[player_name]["warn"..warn_num] then
         return
@@ -57,7 +59,7 @@ function warn_system.reactivate_warn(player_name, warn_num)
     warn_system.save_warns()
 end
 
--- fonction pour marquer un avertissement comme lu par le joueur
+-- Function to mark a warning as read by the player
 function warn_system.read_warn(player_name, warn_num)
     if not warns[player_name] or not warns[player_name]["warn"..warn_num] then
         return
@@ -66,7 +68,7 @@ function warn_system.read_warn(player_name, warn_num)
     warn_system.save_warns()
 end
 
--- fonction pour marquer un avertissement comme  non  lu par le joueur
+-- Function to mark a warning as unread by the player
 function warn_system.unread_warn(player_name, warn_num)
     if not warns[player_name] or not warns[player_name]["warn"..warn_num] then
         return
@@ -75,30 +77,28 @@ function warn_system.unread_warn(player_name, warn_num)
     warn_system.save_warns()
 end
 
--- Fonction pour ouvrir un avertissement au joueur dans une interface graphique
--- pour un avertissement spécifique avec un bouton pour le marquer comme lu
--- appelle la fonction warn_system.read_warn pour marquer l'avertissement comme lu
+-- Function to open a warning to the player in a graphical interface
+-- for a specific warning with a button to mark it as read
+-- calls the function warn_system.read_warn to mark the warning as read
 function warn_system.show_warn_formspec(player_name, warn_num)
     local warn_data = warns[player_name]["warn"..warn_num]
     local form = "size[10,8]" ..
-        "label[0,0;Avertissement #" .. warn_num .. "]" ..
-        "label[0,1;Raison : " .. warn_data.reason .. "]" ..
-        "label[0,2;Date : " .. warn_data.date .. "]" ..
-        -- Instruction pour marquer l'avertissement comme lu
-        "label[0,3;merci de prendre connaissance de cet avertissement]" ..
-        "label[0,4;vous pouvez accéder a tout moment au reglement du serveur.]" ..
-        "label[0,5; avec la commande /reglement]" ..
-        "label[0,6; en cas de non respect de celui-ci, des sanctions pourront etre prise]" ..
+        "label[0,0;".. S("Warning #") .. warn_num .. "]" ..
+        "label[0,1;".. S("Reason") .. ": " .. warn_data.reason .. "]" ..
+        "label[0,2;".. S("Date") .. ": " .. warn_data.date .. "]" ..
+        "label[0,3;".. S("Please acknowledge this warning.") .. "]" ..
+        "label[0,4;".. S("You can access the server rules at any time with /rules.") .. "]" ..
+        "label[0,5;".. S("Failure to comply may result in sanctions.") .. "]" ..
 
-        -- Bouton de fermeture et appel à la fonction warn_system.read_warn
-        "button_exit[3,7;4,1;read_warn_" .. warn_num .. ";Marquer comme lu]"
+        -- Close button and call to warn_system.read_warn function
+        "button_exit[3,7;4,1;".. S("Mark as Read") .. "_" .. warn_num .. ";".. S("Mark as Read") .."]"
     minetest.show_formspec(player_name, "warn_system:show_warn_" .. warn_num, form)
-    minetest.chat_send_player(player_name, "Avertissement #" .. warn_num .. " affiché.")
+    minetest.chat_send_player(player_name, S("Warning #") .. warn_num .. " " .. S("displayed."))
 end
 
--- Fonction pour vérifier et afficher le prochain avertissement non lu
+-- Function to check and display the next unread warning
 local function check_and_display_next_warning(player_name)
-    -- met dans une variable un avertissement non lu et non annulé
+    -- sets a variable to an unread and uncanceled warning
     local next_warn
     for warn_num, warn_data in pairs(warns[player_name]) do
         if not warn_data.read and not warn_data.canceled then
@@ -106,7 +106,7 @@ local function check_and_display_next_warning(player_name)
             break
         end
     end 
-    -- Si un avertissement non lu a été trouvé, appelle la fonction warn_system.show_warn_formspec apres 5 secondes
+    -- If an unread warning is found, call the warn_system.show_warn_formspec function after 5 seconds
     if next_warn then
         minetest.after(2, function()
             warn_system.show_warn_formspec(player_name, next_warn)
@@ -115,24 +115,22 @@ local function check_and_display_next_warning(player_name)
 
 end
 
--- Détecter si le joueur a lu l'avertissement et le marquer comme lu en envoyant un message
+-- Detect if the player has read the warning and mark it as read by sending a message
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-    -- Si le formulaire est celui de l'avertissement (warn_system:show_warn_(numéro d'avertissement))
+    -- If the form is that of the warning (warn_system:show_warn_(warning number))
     if formname:find("warn_system:show_warn_") then
-        -- Utiliser la fonction warn_system.read_warn pour marquer l'avertissement comme lu
+        -- Use the warn_system.read_warn function to mark the warning as read
         local warn_num = tonumber(formname:match("(%d+)"))
         local player_name = player:get_player_name()
         warn_system.read_warn(player_name, warn_num)
-        -- Envoyer un message dans le chat pour confirmer que l'avertissement a été marqué comme lu
-        minetest.chat_send_player(player_name, "Avertissement numéro " .. warn_num .. " marqué comme lu.")
-        -- Vérifier et afficher le prochain avertissement non lu
+        -- Send a message in the chat to confirm that the warning has been marked as read
+        minetest.chat_send_player(player_name, S("Warning number") .. " " .. warn_num .. " " .. S("marked as read."))
+        -- Check and display the next unread warning
         check_and_display_next_warning(player_name)
     end
 end)
 
-
-
--- fonction pour obtenir le nombre d'avertissements d'un joueur
+-- Function to get the number of warnings for a player
 function warn_system.get_num_warns(player_name)
     local player_warns = warns[player_name]
     local num_warns = 0
@@ -144,26 +142,23 @@ function warn_system.get_num_warns(player_name)
     return num_warns
 end
 
-
-
-
--- commande pour afficher le nombre d'avertissements d'un joueur
+-- Command to display the number of warnings for a player
 minetest.register_chatcommand("num_warns", {
-    params = "<joueur>",
-    description = "Affiche le nombre d'avertissements d'un joueur",
+    params = "<player>",
+    description = S("Displays the number of warnings for a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player = param
         if not target_player then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /num_warns <joueur>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /num_warns <player>"))
             return
         end
         local num_warns = warn_system.get_num_warns(target_player)
-        minetest.chat_send_player(name, "Le joueur " .. target_player .. " a " .. num_warns .. " avertissements.")
+        minetest.chat_send_player(name, S("Player") .. " " .. target_player .. " " .. S("has") .. " " .. num_warns .. " " .. S("warnings."))
     end,
 })
 
--- Fonction pour donner un avertissement à un joueur
+-- Function to give a warning to a player
 function warn_system.give_warn(player_name, reason)
     if not warns[player_name] then
         warns[player_name] = {}
@@ -177,141 +172,140 @@ function warn_system.give_warn(player_name, reason)
         canceled = false
     }
     warn_system.save_warns()
-    minetest.chat_send_player(player_name, "Vous avez reçu un avertissement pour la raison suivante : " .. reason .. ". C'est votre avertissement #" .. num_warns)
-    --verifie si le joueur est en ligne et affiche l'avertissement
+    minetest.chat_send_player(player_name, S("You have received a warning for the following reason") .. ": " .. reason .. ". " .. S("This is your warning number") .. " " .. num_warns)
+    -- checks if the player is online and displays the warning
     if minetest.get_player_by_name(player_name) then
         warn_system.show_warn_formspec(player_name, num_warns)
     end
 end
 
--- commande pour afficher les avertissements spécifiques à un joueur et utiliser la fonction warn_system.show_warn_formspec
+-- Command to display specific warnings for a player and use the warn_system.show_warn_formspec function
 minetest.register_chatcommand("show_warn", {
-    params = "<joueur> <numéro d'avertissement>",
-    description = "Affiche un avertissement spécifique pour un joueur",
+    params = "<player> <warning number>",
+    description = S("Displays a specific warning for a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /show_warn <joueur> <numéro d'avertissement>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /show_warn <player> <warning number>"))
             return
         end
         if not minetest.get_player_by_name(target_player) then
-            minetest.chat_send_player(name, "Le joueur spécifié n'est pas en ligne.")
+            minetest.chat_send_player(name, S("The specified player is not online."))
             return
         end
         if not warns[target_player] or not warns[target_player]["warn"..warn_num] then
-            minetest.chat_send_player(name, "Avertissement non trouvé.")
+            minetest.chat_send_player(name, S("Warning not found."))
             return
         end
         warn_system.show_warn_formspec(target_player, tonumber(warn_num))
     end,
 })
 
--- commande pour annuler un avertissement
+-- Command to cancel a warning
 minetest.register_chatcommand("cancel_warn", {
-    params = "<joueur> <numéro d'avertissement>",
-    description = "Annule un avertissement donné à un joueur",
+    params = "<player> <warning number>",
+    description = S("Cancels a warning given to a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /cancel_warn <joueur> <numéro d'avertissement>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /cancel_warn <player> <warning number>"))
             return
         end
         if not minetest.get_player_by_name(target_player) then
-            minetest.chat_send_player(name, "Le joueur spécifié n'est pas en ligne.")
+            minetest.chat_send_player(name, S("The specified player is not online."))
             return
         end
         warn_system.cancel_warn(target_player, tonumber(warn_num))
-        minetest.chat_send_player(name, "Avertissement #" .. warn_num .. " annulé pour le joueur " .. target_player)
+        minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " " .. S("cancelled for player") .. " " .. target_player)
     end,
 })
 
--- commande pour réactiver un avertissement
+-- Command to reactivate a warning
 minetest.register_chatcommand("reactivate_warn", {
-    params = "<joueur> <numéro d'avertissement>",
-    description = "Réactive un avertissement annulé pour un joueur",
+    params = "<player> <warning number>",
+    description = S("Reactivates a cancelled warning for a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /reactivate_warn <joueur> <numéro d'avertissement>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /reactivate_warn <player> <warning number>"))
             return
         end
         if not minetest.get_player_by_name(target_player) then
-            minetest.chat_send_player(name, "Le joueur spécifié n'est pas en ligne.")
+            minetest.chat_send_player(name, S("The specified player is not online."))
             return
         end
         warn_system.reactivate_warn(target_player, tonumber(warn_num))
-        minetest.chat_send_player(name, "Avertissement #" .. warn_num .. " réactivé pour le joueur " .. target_player)
+        minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " " .. S("reactivated for player") .. " " .. target_player)
     end,
 })
 
--- commande pour marquer un avertissement comme lu par le joueur
+-- Command to mark a warning as read by the player
 minetest.register_chatcommand("read_warn", {
-    params = "<joueur> <numéro d'avertissement>",
-    description = "Marque un avertissement comme lu pour un joueur",
+    params = "<player> <warning number>",
+    description = S("Marks a warning as read for a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /read_warn <joueur> <numéro d'avertissement>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /read_warn <player> <warning number>"))
             return
         end
         if not minetest.get_player_by_name(target_player) then
-            minetest.chat_send_player(name, "Le joueur spécifié n'est pas en ligne.")
+            minetest.chat_send_player(name, S("The specified player is not online."))
             return
         end
         warn_system.read_warn(target_player, tonumber(warn_num))
-        minetest.chat_send_player(name, "Avertissement #" .. warn_num .. " marqué comme lu pour le joueur " .. target_player)
+        minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " " .. S("marked as read for player") .. " " .. target_player)
     end,
 })
 
--- Commande pour donner un avertissement à un joueur
+-- Command to give a warning to a player
 minetest.register_chatcommand("warn", {
-    params = "<joueur> <raison>",
-    description = "Donne un avertissement à un joueur",
+    params = "<player> <reason>",
+    description = S("Gives a warning to a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player, reason = param:match("(%S+)%s+(.+)")
         if not target_player or not reason then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /warn <joueur> <raison>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /warn <player> <reason>"))
             return
         end
         warn_system.give_warn(target_player, reason)
-        minetest.chat_send_player(name, "Avertissement donné à " .. target_player .. " pour la raison suivante : " .. reason)
+        minetest.chat_send_player(name, S("Warning given to") .. " " .. target_player .. " " .. S("for the following reason") .. ": " .. reason)
     end,
 })
 
--- Commande pour voir tous les avertissements d'un joueur
+-- Command to view all warnings for a player
 minetest.register_chatcommand("warns", {
-    params = "<joueur>",
-    description = "Affiche tous les avertissements d'un joueur",
+    params = "<player>",
+    description = S("Displays all warnings for a player"),
     privs = {warn_perm=true},
     func = function(name, param)
         local target_player = param
         if not target_player then
-            minetest.chat_send_player(name, "Syntaxe incorrecte. Utilisation: /view_warns <joueur>")
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /view_warns <player>"))
             return
         end
         local player_warns = warns[target_player]
         if not player_warns then
-            minetest.chat_send_player(name, "Ce joueur n'a aucun avertissement.")
+            minetest.chat_send_player(name, S("This player has no warnings."))
             return
         end
-        minetest.chat_send_player(name, "Avertissements pour le joueur " .. target_player .. ":")
+        minetest.chat_send_player(name, S("Warnings for player") .. " " .. target_player .. ":")
         for warn_num, warn_data in pairs(player_warns) do
-            local status = warn_data.read and "Lu" or "Non lu"
-            local canceled = warn_data.canceled and "Annulé" or "Actif"
-            minetest.chat_send_player(name, "Avertissement #" .. warn_num .. " - Raison : " .. warn_data.reason .. " - Date : " .. warn_data.date .. " - Statut : " .. status .. " - " .. canceled)
+            local status = warn_data.read and S("Read") or S("Unread")
+            local canceled = warn_data.canceled and S("Cancelled") or S("Active")
+            minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " - " .. S("Reason") .. ": " .. warn_data.reason .. " - " .. S("Date") .. ": " .. warn_data.date .. " - " .. S("Status") .. ": " .. status .. " - " .. canceled)
         end
     end,
 })
 
-
--- quand un joueur se connecte, vérifie et affiche le prochain avertissement non lu
+-- When a player joins, check and display the next unread warning
 minetest.register_on_joinplayer(function(player)
-    -- verifie si le joueur a des avertissements 
+    -- checks if the player has warnings
     if not warns[player:get_player_name()] then
         return
     end
@@ -323,7 +317,7 @@ minetest.register_on_joinplayer(function(player)
             break
         end
     end 
-    -- Si un avertissement non lu a été trouvé, appelle la fonction warn_system.show_warn_formspec apres 5 secondes
+    -- If an unread warning is found, call the warn_system.show_warn_formspec function after 5 seconds
     if next_warn then
         minetest.after(1, function()
             warn_system.show_warn_formspec(player_name, next_warn)
@@ -331,5 +325,5 @@ minetest.register_on_joinplayer(function(player)
     end
 end)
 
--- Charger la base de données des avertissements au démarrage
+-- Load the warnings database at startup
 warn_system.load_warns_database()
