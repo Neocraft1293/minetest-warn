@@ -7,6 +7,13 @@ local warns_json_file_path = minetest.get_worldpath() .. "/warns_data.json"
 -- Initialiser la variable des avertissements en dehors de load_warns_database
 local warns = {}
 
+-- Enregistrement de la permission pour accéder aux commandes d'avertissement
+minetest.register_privilege("warn_perm", {
+    description = S("Allows access to warn commands."),
+    give_to_singleplayer = false,  -- Permettre à un joueur unique de posséder cette permission
+}) --privs = {warn_perm=true}, -- Ajouter cette ligne dans le fichier de configuration pour donner la permission à un joueur
+
+
 -- Fonction pour charger la base de données des avertissements
 function warn_system.load_warns_database()
     local json_file = io.open(warns_json_file_path, "r")
@@ -144,6 +151,7 @@ end
 minetest.register_chatcommand("num_warns", {
     params = "<joueur>",
     description = "Affiche le nombre d'avertissements d'un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player = param
         if not target_player then
@@ -180,6 +188,7 @@ end
 minetest.register_chatcommand("show_warn", {
     params = "<joueur> <numéro d'avertissement>",
     description = "Affiche un avertissement spécifique pour un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
@@ -202,6 +211,7 @@ minetest.register_chatcommand("show_warn", {
 minetest.register_chatcommand("cancel_warn", {
     params = "<joueur> <numéro d'avertissement>",
     description = "Annule un avertissement donné à un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
@@ -221,6 +231,7 @@ minetest.register_chatcommand("cancel_warn", {
 minetest.register_chatcommand("reactivate_warn", {
     params = "<joueur> <numéro d'avertissement>",
     description = "Réactive un avertissement annulé pour un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
@@ -240,6 +251,7 @@ minetest.register_chatcommand("reactivate_warn", {
 minetest.register_chatcommand("read_warn", {
     params = "<joueur> <numéro d'avertissement>",
     description = "Marque un avertissement comme lu pour un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player, warn_num = param:match("(%S+)%s+(%d+)")
         if not target_player or not warn_num then
@@ -259,6 +271,7 @@ minetest.register_chatcommand("read_warn", {
 minetest.register_chatcommand("warn", {
     params = "<joueur> <raison>",
     description = "Donne un avertissement à un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player, reason = param:match("(%S+)%s+(.+)")
         if not target_player or not reason then
@@ -274,6 +287,7 @@ minetest.register_chatcommand("warn", {
 minetest.register_chatcommand("warns", {
     params = "<joueur>",
     description = "Affiche tous les avertissements d'un joueur",
+    privs = {warn_perm=true},
     func = function(name, param)
         local target_player = param
         if not target_player then
