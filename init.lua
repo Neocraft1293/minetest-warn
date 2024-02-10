@@ -311,6 +311,10 @@ minetest.register_chatcommand("warns", {
 
 -- quand un joueur se connecte, vérifie et affiche le prochain avertissement non lu
 minetest.register_on_joinplayer(function(player)
+    -- verifie si le joueur a des avertissements 
+    if not warns[player:get_player_name()] then
+        return
+    end
     local player_name = player:get_player_name()
     local next_warn
     for warn_num, warn_data in pairs(warns[player_name]) do
