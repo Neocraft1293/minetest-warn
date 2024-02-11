@@ -1,0 +1,27 @@
+# textdomain:warn
+
+Mark as Read=Marquer comme lu
+Please acknowledge this warning.=Veuillez reconnaître cet avertissement.
+You can access the server rules at any time with /rules.=Vous pouvez accéder à tout moment aux règles du serveur avec /rules.
+Failure to comply may result in sanctions.=Le non-respect peut entraîner des sanctions.
+Allows access to warn commands.=Autorise l'accès aux commandes d'avertissement.
+Displays the number of warnings for a player.=Affiche le nombre d'avertissements d'un joueur.
+Displays a specific warning for a player.=Affiche un avertissement spécifique pour un joueur.
+Cancels a warning given to a player.=Annule un avertissement donné à un joueur.
+Reactivates a cancelled warning for a player.=Réactive un avertissement annulé pour un joueur.
+Marks a warning as read for a player.=Marque un avertissement comme lu pour un joueur.
+Gives a warning to a player.=Donne un avertissement à un joueur.
+Displays all warnings for a player.=Affiche tous les avertissements d'un joueur.
+
+Warning displayed.=Avertissement affiché.
+Thank you for reading this warning.=Merci d'avoir pris connaissance de cet avertissement.
+You can access the server rules at any time.=Vous pouvez accéder aux règles du serveur à tout moment.
+with the command /rules.=avec la commande /reglement.
+In case of non-compliance, sanctions may be taken.=En cas de non-respect, des sanctions peuvent être prises.
+Warning number displayed.=Numéro d'avertissement affiché.
+Warning marked as read.=Avertissement marqué comme lu.
+Warning cancelled for player.=Avertissement annulé pour le joueur.
+Warning reactivated for player.=Avertissement réactivé pour le joueur.
+Warning marked as read for player.=Avertissement marqué comme lu pour le joueur.
+Warning given to player for the following reason.=Avertissement donné au joueur pour la raison suivante.
+This player has no warnings.=Ce joueur n'a aucun avertissement.
