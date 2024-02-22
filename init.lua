@@ -77,24 +77,90 @@ function warn_system.unread_warn(player_name, warn_num)
     warn_system.save_warns()
 end
 
+-- Function to split a string into lines of 50 characters
+function split_into_lines(input_string)
+    local lines = {}
+    local current_line = ""
+    for word in input_string:gmatch("%S+") do
+        while word:len() > 50 do
+            table.insert(lines, word:sub(1, 50))
+            word = word:sub(51)
+        end
+
+        if current_line == "" then
+            current_line = word
+        elseif current_line:len() + word:len() + 1 <= 50 then
+            current_line = current_line .. " " .. word
+        else
+            table.insert(lines, current_line)
+            current_line = word
+        end
+    end
+    if current_line ~= "" then
+        table.insert(lines, current_line)
+    end
+    return lines
+end
+
+
+
+
+
+
 -- Function to open a warning to the player in a graphical interface
 -- for a specific warning with a button to mark it as read
 -- calls the function warn_system.read_warn to mark the warning as read
 function warn_system.show_warn_formspec(player_name, warn_num)
     local warn_data = warns[player_name]["warn"..warn_num]
-    local form = "size[10,8]" ..
-        "label[0,0;".. S("Warning #") .. warn_num .. "]" ..
-        "label[0,1;".. S("Reason") .. ": " .. warn_data.reason .. "]" ..
-        "label[0,2;".. S("Date") .. ": " .. warn_data.date .. "]" ..
-        "label[0,3;".. S("Please acknowledge this warning.") .. "]" ..
-        "label[0,4;".. S("You can access the server rules at any time with /rules.") .. "]" ..
-        "label[0,5;".. S("Failure to comply may result in sanctions.") .. "]" ..
+    -- découpe la raison en plusieurs lignes de 50 caractères
+    local reason_lines = split_into_lines(warn_data.reason)
+    -- compte le nombre de lignes pour ajuster la taille de la fenêtre
+    local num_lines = #reason_lines
 
-        -- Close button and call to warn_system.read_warn function
-        "button_exit[3,7;4,1;".. S("Mark as Read") .. "_" .. warn_num .. ";".. S("Mark as Read") .."]"
+    local form = "size[".. 10 ..",".. 7 + num_lines .."]" ..
+        "label[0,0;".. S("Warning #") .. warn_num .. "]"
+
+    -- Afficher chaque partie de la raison sur une nouvelle ligne
+    for i = 1, #reason_lines do
+        --detact si c'est la première ligne
+        if i == 1 then
+            form = form .. "label[0,".. (1 + (i -1 )) ..";".. S("Reason") .. ": " .. reason_lines[i] .. "]"
+        else
+            form = form .. "label[0,".. (1 + (i -1 )) ..";".. reason_lines[i] .. "]"
+        end
+    end
+
+    -- La suite de votre code reste inchangée
+    form = form ..
+        "label[0,".. (2 + (num_lines -1 )) ..";".. S("Date") .. ": " .. warn_data.date .. "]" ..
+        "label[0,".. (3 + (num_lines -1 )) ..";".. S("Please acknowledge this warning.") .. "]" ..
+        "label[0,".. (4 + (num_lines -1 )) ..";".. S("You can access the server rules at any time with /rules.") .. "]" ..
+        "label[0,".. (5 + (num_lines -1 )) ..";".. S("Failure to comply may result in sanctions.") .. "]" ..
+        "label[0,".. (6 + (num_lines -1 )) ..";".. S("If you have any questions, please contact a moderator.") .. "]" ..
+        "button_exit[0,".. (7 + (num_lines -1 )) ..";3,1;read_warn_" .. warn_num .. ";".. S("Mark as Read") .. "]"
+
     minetest.show_formspec(player_name, "warn_system:show_warn_" .. warn_num, form)
     minetest.chat_send_player(player_name, S("Warning #") .. warn_num .. " " .. S("displayed."))
 end
+
+-- Function to check and display the next unread warning
+local function check_and_display_next_warning(player_name)
+    -- sets a variable to an unread and uncanceled warning
+    local next_warn
+    for warn_num, warn_data in pairs(warns[player_name]) do
+        if not warn_data.read and not warn_data.canceled then
+            next_warn = tonumber(warn_num:match("%d+"))
+            break
+        end
+    end 
+    -- If an unread warning is found, call the warn_system.show_warn_formspec function after 5 seconds
+    if next_warn then
+        minetest.after(2, function()
+            warn_system.show_warn_formspec(player_name, next_warn)
+        end)
+    end
+end
+
 
 -- Function to check and display the next unread warning
 local function check_and_display_next_warning(player_name)
@@ -324,6 +390,32 @@ minetest.register_on_joinplayer(function(player)
         end)
     end
 end)
+
+-- commande mywarns pour voir ses propres avertissements qui sont actifs qui est un derivé de /warns mais pour soi-même uniquement et qui ne nécessite pas de privilège 
+minetest.register_chatcommand("mywarns", {
+    params = "",
+    description = S("Displays all your active warnings"),
+    privs = {},
+    func = function(name, param)
+        local target_player = name
+        if not target_player then
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /mywarns"))
+            return
+        end
+        local player_warns = warns[target_player]
+        if not player_warns then
+            minetest.chat_send_player(name, S("You have no active warnings."))
+            return
+        end
+        minetest.chat_send_player(name, S("Your active warnings") .. ":")
+        for warn_num, warn_data in pairs(player_warns) do
+            if not warn_data.canceled then
+                local status = warn_data.read and S("Read") or S("Unread")
+                minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " - " .. S("Reason") .. ": " .. warn_data.reason .. " - " .. S("Date") .. ": " .. warn_data.date)
+            end
+        end
+    end,
+})
 
 -- Load the warnings database at startup
 warn_system.load_warns_database()
