@@ -145,7 +145,6 @@ function warn_system.show_warn_formspec(player_name, warn_num)
         end
     end
 
-    -- La suite de votre code reste inchangée
     form = form ..
         "label[0,".. (2 + (num_lines -1 )) ..";".. S("Date") .. ": " .. warn_data.date .. "]" ..
         "label[0,".. (3 + (num_lines -1 )) ..";".. S("Please acknowledge this warning.") .. "]" ..
