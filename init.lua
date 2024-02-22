@@ -16,6 +16,12 @@ minetest.register_privilege("warn_perm", {
     give_to_singleplayer = false,  -- Allow a single player to possess this permission
 })
 
+-- register the privilege to suppress the warnings
+minetest.register_privilege("delete_warn_perm", {
+    description = S("Allows access to cancel warn commands."),
+    give_to_singleplayer = false,  -- Allow a single player to possess this permission
+})
+
 -- Function to load the warnings database
 function warn_system.load_warns_database()
     local json_file = io.open(warns_json_file_path, "r")
@@ -74,6 +80,15 @@ function warn_system.unread_warn(player_name, warn_num)
         return
     end
     warns[player_name]["warn"..warn_num].read = false
+    warn_system.save_warns()
+end
+
+--fonction pour supprimer un avertissement
+function warn_system.delete_warn(player_name, warn_num)
+    if not warns[player_name] or not warns[player_name]["warn"..warn_num] then
+        return
+    end
+    warns[player_name]["warn"..warn_num] = nil
     warn_system.save_warns()
 end
 
@@ -414,6 +429,26 @@ minetest.register_chatcommand("mywarns", {
                 minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " - " .. S("Reason") .. ": " .. warn_data.reason .. " - " .. S("Date") .. ": " .. warn_data.date)
             end
         end
+    end,
+})
+
+--commande pour supprimer un avertissement
+minetest.register_chatcommand("delete_warn", {
+    params = "<player> <warning number>",
+    description = S("Deletes a warning for a player"),
+    privs = {delete_warn_perm=true},
+    func = function(name, param)
+        local target_player, warn_num = param:match("(%S+)%s+(%d+)")
+        if not target_player or not warn_num then
+            minetest.chat_send_player(name, S("Incorrect syntax. Usage: /delete_warn <player> <warning number>"))
+            return
+        end
+        if not minetest.get_player_by_name(target_player) then
+            minetest.chat_send_player(name, S("The specified player is not online."))
+            return
+        end
+        warn_system.delete_warn(target_player, tonumber(warn_num))
+        minetest.chat_send_player(name, S("Warning") .. " #" .. warn_num .. " " .. S("deleted for player") .. " " .. target_player)
     end,
 })
 
